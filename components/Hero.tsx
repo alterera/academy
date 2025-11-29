@@ -1,4 +1,5 @@
 import Image from 'next/image'
+import Link from 'next/link'
 import React from 'react'
 
 const Hero = () => {
@@ -10,9 +11,11 @@ const Hero = () => {
                     Welcome to Alterera <br className='hidden md:block'/> Academy!
                 </h2>
                 <p className='text-base md:text-lg'>Upgrade your skills with industry-ready courses crafted for real-world success.</p>
+                <Link href={"/courses"} className='w-fit'>
                 <button className='bg-[#00E785] px-6 md:px-4 py-2.5 md:py-2 rounded-full w-fit mx-auto md:mx-0 hover:bg-[#00d675] transition-colors font-semibold'>
-                    Check your Course
+                    Check Our Courses
                 </button>
+                </Link>
             </div>
             <div className='w-full md:w-auto flex justify-center flex-1'>
                 <div className='relative w-full max-w-[400px] md:max-w-[450px] lg:max-w-[600px] xl:max-w-[700px] h-[250px] md:h-[300px] lg:h-[350px] xl:h-[400px]'>

@@ -18,6 +18,7 @@ import {
   DatabaseZap,
   Figma,
   Gpu,
+  EllipsisVertical,
 } from "lucide-react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -271,6 +272,12 @@ export default function Navbar() {
                         Digital Marketing
                       </Link>
                     </NavigationMenuLink>
+                    <NavigationMenuLink asChild>
+                      <Link href="/courses" className="flex-row items-center gap-2">
+                        <EllipsisVertical />
+                        Explore All Courses
+                      </Link>
+                    </NavigationMenuLink>
                   </li>
                 </ul>
               </NavigationMenuContent>
@@ -280,7 +287,7 @@ export default function Navbar() {
                 asChild
                 className={navigationMenuTriggerStyle()}
               >
-                <Link href="/">Pricing</Link>
+                <Link href="/">About</Link>
               </NavigationMenuLink>
             </NavigationMenuItem>
           </NavigationMenuList>
@@ -340,16 +347,20 @@ export default function Navbar() {
               Home
             </Link>
 
-            <div className="py-2 border-b">
-              <p className="text-xl font-semibold mb-3">Courses</p>
-            </div>
+            <Link
+              href={"/courses"}
+              onClick={closeMobileMenu}
+              className="text-xl font-semibold py-2 border-b"
+            >
+              Courses
+            </Link>
 
             <Link
               href="/"
               onClick={closeMobileMenu}
               className="text-xl font-semibold py-2 border-b"
             >
-              Pricing
+              About
             </Link>
           </nav>
 

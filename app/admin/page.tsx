@@ -1,37 +1,84 @@
 import React from "react";
-import { LayoutDashboard, BookOpen, Users, BarChart3 } from "lucide-react";
+import { BookOpen, Users, BarChart3, TrendingUp } from "lucide-react";
 import Link from "next/link";
+import connectDB from "@/lib/db";
+import { Course, User } from "@/lib/models";
+import { getSession } from "@/lib/auth/session";
+import { redirect } from "next/navigation";
 
-const stats = [
-  {
-    title: "Total Courses",
-    value: "12",
-    icon: BookOpen,
-    color: "bg-blue-500",
-    href: "/admin/courses",
-  },
-  {
-    title: "Total Users",
-    value: "1,234",
-    icon: Users,
-    color: "bg-green-500",
-    href: "/admin/users",
-  },
-  {
-    title: "Active Enrollments",
-    value: "856",
-    icon: BarChart3,
-    color: "bg-purple-500",
-    href: "/admin/enrollments",
-  },
-  {
-    title: "Completion Rate",
-    value: "68%",
-    icon: LayoutDashboard,
-    color: "bg-orange-500",
-    href: "/admin/analytics",
-  },
-];
+async function getAdminStats() {
+  try {
+    await connectDB();
+    const session = await getSession();
+    
+    if (!session.isAdmin) {
+      return null;
+    }
+
+    // Get total courses count
+    const totalCourses = await Course.countDocuments();
+
+    // Get total users count
+    const totalUsers = await User.countDocuments();
+
+    // Get total enrollments (sum of all enrolledCourses arrays)
+    const users = await User.find({ enrolledCourses: { $exists: true, $ne: [] } });
+    const totalEnrollments = users.reduce((sum, user) => {
+      return sum + (user.enrolledCourses?.length || 0);
+    }, 0);
+
+    // Calculate total revenue from enrolled courses
+    const usersWithEnrollments = await User.find({
+      enrolledCourses: { $exists: true, $ne: [] },
+    }).populate({
+      path: "enrolledCourses",
+      select: "price",
+    });
+
+    let totalRevenue = 0;
+    usersWithEnrollments.forEach((user) => {
+      if (user.enrolledCourses && Array.isArray(user.enrolledCourses)) {
+        user.enrolledCourses.forEach((course: any) => {
+          if (course && course.price) {
+            // Remove ₹ and commas, convert to number
+            const numericPrice = parseFloat(
+              course.price.toString().replace(/[₹,]/g, "").trim()
+            ) || 0;
+            totalRevenue += numericPrice;
+          }
+        });
+      }
+    });
+
+    // Calculate platform fee and GST for each enrollment
+    const PLATFORM_FEE = 99;
+    const GST_RATE = 0.18; // 18%
+    
+    // For each enrollment, add platform fee and GST
+    const revenueWithFees = totalEnrollments * PLATFORM_FEE;
+    const gstOnRevenue = totalRevenue * GST_RATE;
+    const gstOnFees = revenueWithFees * GST_RATE;
+    
+    const totalRevenueWithFees = totalRevenue + revenueWithFees + gstOnRevenue + gstOnFees;
+
+    // Format revenue with Indian numbering
+    const formatRevenue = (amount: number): string => {
+      return new Intl.NumberFormat("en-IN", {
+        maximumFractionDigits: 0,
+      }).format(amount);
+    };
+
+    return {
+      totalCourses,
+      totalUsers,
+      totalEnrollments,
+      totalRevenue: `₹${formatRevenue(totalRevenueWithFees)}`,
+    };
+  } catch (error) {
+    console.error("Failed to fetch admin stats:", error);
+    return null;
+  }
+}
 
 const recentActivities = [
   {
@@ -60,7 +107,44 @@ const recentActivities = [
   },
 ];
 
-export default function AdminDashboard() {
+export default async function AdminDashboard() {
+  const stats = await getAdminStats();
+
+  if (!stats) {
+    redirect("/admin/login");
+  }
+
+  const statsData = [
+    {
+      title: "Total Revenue",
+      value: stats.totalRevenue,
+      icon: TrendingUp,
+      color: "bg-orange-500",
+      href: "/admin/enrollments",
+    },
+    {
+      title: "Total Courses",
+      value: stats.totalCourses.toString(),
+      icon: BookOpen,
+      color: "bg-blue-500",
+      href: "/admin/courses",
+    },
+    {
+      title: "Active Enrollments",
+      value: stats.totalEnrollments.toLocaleString("en-IN"),
+      icon: BarChart3,
+      color: "bg-purple-500",
+      href: "/admin/enrollments",
+    },
+    {
+      title: "Total Users",
+      value: stats.totalUsers.toLocaleString("en-IN"),
+      icon: Users,
+      color: "bg-green-500",
+      href: "/admin/users",
+    }
+  ];
+
   return (
     <div className="space-y-6">
       <div>
@@ -72,7 +156,7 @@ export default function AdminDashboard() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat) => {
+        {statsData.map((stat) => {
           const Icon = stat.icon;
           return (
             <Link

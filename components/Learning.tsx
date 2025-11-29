@@ -16,7 +16,7 @@ const Learning: React.FC<LearningProps> = ({ learnings }) => {
           What you'll learn
         </h2>
 
-        <ul className="list-disc pl-4 leading-relaxed text-base md:text-xl">
+        <ul className="list-disc pl-4 leading-relaxed text-base md:text-xl nunito text-[#1d1d1d]">
           {learnings.map((learning, index) => (
             <li key={index}>{learning}</li>
           ))}

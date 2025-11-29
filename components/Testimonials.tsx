@@ -30,10 +30,10 @@ const Testimonials = () => {
       <div className="max-w-6xl mx-auto">
         <div className="flex flex-col items-center gap-4 px-4">
           <h2 className="text-2xl md:text-4xl lg:text-5xl font-bold text-center">
-            Over 10,000 students
+            Over 5,000 students
           </h2>
           <p className="text-center text-base md:text-lg nunito text-[#1d1d1d]">
-            What some of our 10,000+ customers across 160+ countries think of
+            What some of our 5,000+ students across 27+ countries think of
             Alterera.
           </p>
         </div>

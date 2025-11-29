@@ -5,7 +5,9 @@ import Curriculum from "@/components/Curriculum";
 import Learning from "@/components/Learning";
 import WhyUsGreen from "@/components/WhyUsGreen";
 import connectDB from "@/lib/db";
-import { Course } from "@/lib/models";
+import { Course, User } from "@/lib/models";
+import { getSession } from "@/lib/auth/session";
+import Image from "next/image";
 
 async function getCourse(slug: string) {
   try {
@@ -68,26 +70,48 @@ export default async function CoursePage({
     );
   }
 
+  // Check if user is enrolled in this course
+  let isEnrolled = false;
+  try {
+    const session = await getSession();
+    if (session.isLoggedIn && session.userId) {
+      await connectDB();
+      const user = await User.findById(session.userId);
+      if (user && user.enrolledCourses && user.enrolledCourses.length > 0) {
+        // Compare course IDs (both as strings for comparison)
+        isEnrolled = user.enrolledCourses.some(
+          (enrolledCourseId) => enrolledCourseId.toString() === course.id
+        );
+      }
+    }
+  } catch (error) {
+    // If error checking enrollment, assume not enrolled (show price)
+    console.error("Error checking enrollment:", error);
+  }
+
   return (
     <div className="w-full pt-10 md:pt-20">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-center px-4">
+        <h2 className="text-2xl md:text-3xl lg:text-4xl xl:text-5xl font-bold text-center px-4 relative">
           {course.title}
+          <Image src={'/shapes/green-3.svg'} height={40} width={40} alt="green 3 line" className="hidden md:block absolute -top-2 left-15"/>
         </h2>
         <p className="text-center text-sm md:text-base lg:text-lg nunito text-[#1d1d1d] pt-4 px-4">
           {course.shortDescription}
         </p>
       </div>
-      <CoursePrice
-        priceTitle={course.priceTitle}
-        price={course.price}
-        priceDescription={course.priceDescription}
-        priceSubDescription={course.priceSubDescription}
-        priceFeatures={course.priceFeatures}
-        priceButtonText={course.priceButtonText}
-        courseSlug={course.slug}
-        priceFooterText={course.priceFooterText}
-      />
+      {!isEnrolled && (
+        <CoursePrice
+          priceTitle={course.priceTitle}
+          price={course.price}
+          priceDescription={course.priceDescription}
+          priceSubDescription={course.priceSubDescription}
+          priceFeatures={course.priceFeatures}
+          priceButtonText={course.priceButtonText}
+          courseSlug={course.slug}
+          priceFooterText={course.priceFooterText}
+        />
+      )}
       <CourseDetails
         chapters={course.chapters}
         assessments={course.assessments}

@@ -38,12 +38,8 @@ export async function GET() {
     const enrolledCourses = user.enrolledCourses || [];
     const courseCount = enrolledCourses.length;
 
-    // Count certificates (courses with certificationEnabled that user has completed)
-    // For now, we'll count courses with certificationEnabled as potential certificates
-    // This can be enhanced later with actual completion tracking
-    const certificateCount = enrolledCourses.filter(
-      (course: any) => course.certificationEnabled
-    ).length;
+    // Certificate count will be 0 for now - completion logic will be added later
+    const certificateCount = 0;
 
     return NextResponse.json({
       ok: true,

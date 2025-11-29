@@ -3,6 +3,7 @@ import { Outfit, Nunito_Sans } from "next/font/google";
 import "./globals.css";
 import { ConditionalLayout } from "@/components/common/ConditionalLayout";
 import { AuthProvider } from "@/lib/auth/context";
+import NextTopLoader from 'nextjs-toploader';
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -62,7 +63,10 @@ export default function RootLayout({
         className={`${outfit.variable} ${nunitoSans.variable} font-outfit antialiased`}
       >
         <AuthProvider>
-          <ConditionalLayout>{children}</ConditionalLayout>
+          <ConditionalLayout>
+          <NextTopLoader color="#00e785"/>
+            {children}
+          </ConditionalLayout>
         </AuthProvider>
       </body>
     </html>

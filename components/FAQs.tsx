@@ -24,15 +24,15 @@ const faqData = [
 
 const FAQs = () => {
   return (
-    <div className="w-full py-10 md:py-20 px-4 md:px-0">
+    <div className="w-full py-10 md:py-15 px-4 md:px-0">
       <div className="max-w-6xl mx-auto">
-        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold text-center md:text-left px-4 md:px-0">
+        <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold md:px-0">
           Frequently Asked Questions.
         </h2>
 
         <div className="mt-6 md:mt-8 lg:mt-10">
           {faqData.map((item) => (
-            <div className="pb-4 md:pb-6 border-b-2 border-black my-6 md:my-8 lg:my-10 last:border-b-0" key={item.id}>
+            <div className="pb-4 md:pb-6 border-b-2 border-black mt-6 md:mt-8 lg:mt-10 last:border-b-0" key={item.id}>
               <h4 className="flex items-center text-lg md:text-xl lg:text-2xl font-bold gap-2 md:gap-3">
                 <div className="relative w-5 h-5 md:w-6 md:h-6 shrink-0">
                   <Image

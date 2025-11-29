@@ -92,7 +92,7 @@ const CoursePrice: React.FC<CoursePriceProps> = ({
   return (
     <div className="w-full bg-transparent py-6 md:py-10">
       <div className="max-w-6xl mx-auto px-4">
-        <div className="bg-[#cafde8] rounded-xl p-4 md:p-6 lg:p-10 border border-[#00e785] border-r-2 md:border-r-4 border-r-[#00e785] border-b-2 md:border-b-4 border-b-[#00e785]">
+        <div className="bg-[#cafde8] rounded-xl p-4 md:p-6 lg:p-10 border border-[#00e785] border-r-2 md:border-r-6 border-r-[#00e785] border-b-2 md:border-b-6 border-b-[#00e785]">
           {/* Header: Title and Price */}
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 sm:gap-4 mb-4 md:mb-6">
             {priceTitle && (
@@ -135,10 +135,10 @@ const CoursePrice: React.FC<CoursePriceProps> = ({
                     <button
                       onClick={handleBuyClick}
                       disabled={authLoading}
-                      className="relative inline-flex items-center justify-center h-fit w-full sm:w-auto sm:min-w-[200px] md:min-w-[280px] mt-4 md:mt-5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="group relative inline-flex items-center justify-center h-fit w-full sm:w-auto sm:min-w-[200px] md:min-w-[280px] mt-4 md:mt-5 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {/* Blue shadow background */}
-                      <span className="absolute inset-0 translate-x-1  translate-y-1 bg-[#4fc3ff] rounded-[10px] z-0" />
+                      <span className="absolute inset-0 translate-x-1  translate-y-1 group-hover:translate-x-0 group-hover:translate-y-0 bg-[#f27aff] rounded-[10px] z-0 transition-all duration-300" />
 
                       {/* Button surface */}
                       <span className="relative z-10 inline-block px-4 py-2 text-xs md:text-[13px] text-center font-semibold border-2 w-full sm:w-auto sm:min-w-[200px] md:min-w-[280px] border-black rounded-[10px] bg-transparent">

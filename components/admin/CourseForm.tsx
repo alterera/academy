@@ -699,9 +699,6 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
                 }
                 placeholder="e.g., 1499 (₹ and commas added automatically)"
               />
-              <p className="text-xs text-gray-500">
-                Enter numeric value only. ₹ symbol and comma formatting will be applied automatically.
-              </p>
             </div>
           </div>
 

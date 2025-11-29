@@ -1,4 +1,5 @@
 import { CircleArrowRight } from "lucide-react";
+import Link from "next/link";
 import React from "react";
 
 const CTA = () => {
@@ -11,9 +12,11 @@ const CTA = () => {
         <p className="text-center text-sm md:text-base px-4 max-w-3xl">
         Take your skills to the next level with structured learning, hands-on projects, and expert guidance designed to accelerate your career.
         </p>
+        <Link href={'/courses'}>
         <button className="bg-[#00E785] px-8 md:px-14 py-2.5 md:py-2 rounded-full flex gap-2 items-center hover:bg-[#00d675] transition-colors font-semibold">
           Start Now <CircleArrowRight className="w-5 h-5" />
         </button>
+        </Link>
       </div>
     </div>
   );

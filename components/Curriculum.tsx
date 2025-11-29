@@ -44,7 +44,7 @@ const Curriculum: React.FC<CurriculumProps> = ({ curriculum, certificationEnable
                 {chapter.lessons.map((lesson, lessonIndex) => (
                   <li
                     key={lessonIndex}
-                    className="flex items-start sm:items-center gap-2 border-b pb-2"
+                    className="flex items-start sm:items-center gap-2 border-b pb-2 nunito text-[#1d1d1d]"
                   >
                     <div className="flex items-center gap-2 flex-1 min-w-0">
                       <BookOpenCheck className="h-4 w-4 md:h-5 md:w-5 shrink-0" />

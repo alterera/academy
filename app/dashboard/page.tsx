@@ -25,9 +25,8 @@ async function getDashboardData() {
 
     const enrolledCourses = (user.enrolledCourses || []) as any[];
     const courseCount = enrolledCourses.length;
-    const certificateCount = enrolledCourses.filter(
-      (course) => course.certificationEnabled
-    ).length;
+    // Certificate count will be 0 for now - completion logic will be added later
+    const certificateCount = 0;
 
     return {
       userName: user.name || "User",
