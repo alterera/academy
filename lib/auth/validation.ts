@@ -1,0 +1,59 @@
+/**
+ * Zod validation schemas for auth endpoints
+ * Provides type-safe request body validation
+ */
+
+import { z } from "zod";
+
+/**
+ * Send OTP request validation (for login)
+ */
+export const sendOTPSchema = z.object({
+  phone: z
+    .string()
+    .min(10, "Phone number must be at least 10 digits")
+    .max(15, "Phone number is too long"),
+});
+
+/**
+ * Signup request validation
+ */
+export const signupSchema = z.object({
+  name: z
+    .string()
+    .min(2, "Name must be at least 2 characters")
+    .max(100, "Name is too long"),
+  phone: z
+    .string()
+    .min(10, "Phone number must be at least 10 digits")
+    .max(15, "Phone number is too long"),
+  password: z
+    .string()
+    .min(6, "Password must be at least 6 characters")
+    .max(100, "Password is too long"),
+});
+
+/**
+ * Verify OTP request validation
+ */
+export const verifyOTPSchema = z.object({
+  requestId: z.string().uuid("Invalid request ID"),
+  otp: z
+    .string()
+    .length(6, "OTP must be 6 digits")
+    .regex(/^\d+$/, "OTP must be numeric"),
+});
+
+/**
+ * Resend OTP request validation
+ */
+export const resendOTPSchema = z.object({
+  requestId: z.string().uuid("Invalid request ID"),
+});
+
+// Export types
+export type SendOTPInput = z.infer<typeof sendOTPSchema>;
+export type SignupInput = z.infer<typeof signupSchema>;
+export type VerifyOTPInput = z.infer<typeof verifyOTPSchema>;
+export type ResendOTPInput = z.infer<typeof resendOTPSchema>;
+

@@ -3,6 +3,7 @@ import { Outfit, Nunito_Sans } from "next/font/google";
 import "./globals.css";
 import Navbar from "@/components/common/Navbar";
 import Footer from "@/components/common/Footer";
+import { AuthProvider } from "@/lib/auth/context";
 
 const outfit = Outfit({
   variable: "--font-outfit",
@@ -61,9 +62,11 @@ export default function RootLayout({
       <body
         className={`${outfit.variable} ${nunitoSans.variable} font-outfit antialiased`}
       >
-        <Navbar />
-        {children}
-        <Footer />
+        <AuthProvider>
+          <Navbar />
+          {children}
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );

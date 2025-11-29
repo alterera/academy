@@ -1,5 +1,10 @@
 "use client";
 
+/**
+ * Authentication Modal Component
+ * Handles login and signup flows with OTP verification
+ */
+
 import * as React from "react";
 import {
   Dialog,
@@ -17,7 +22,8 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
+import { useAuth } from "@/lib/auth/context";
 
 interface AuthModalProps {
   open: boolean;
@@ -25,102 +31,351 @@ interface AuthModalProps {
   defaultTab?: "login" | "signup";
 }
 
+type AuthStep = "form" | "otp" | "success";
+
+interface FormError {
+  message: string;
+}
+
 export function AuthModal({ open, onOpenChange, defaultTab = "login" }: AuthModalProps) {
+  const { refreshSession } = useAuth();
   const [activeTab, setActiveTab] = React.useState<"login" | "signup">(defaultTab);
+  
+  // Login state
   const [loginPhone, setLoginPhone] = React.useState("");
   const [loginOTP, setLoginOTP] = React.useState("");
+  const [loginRequestId, setLoginRequestId] = React.useState("");
+  const [loginStep, setLoginStep] = React.useState<AuthStep>("form");
+  
+  // Signup state
   const [signupData, setSignupData] = React.useState({
     name: "",
     phone: "",
     password: "",
   });
   const [signupOTP, setSignupOTP] = React.useState("");
-  const [loginOtpSent, setLoginOtpSent] = React.useState(false);
-  const [signupOtpSent, setSignupOtpSent] = React.useState(false);
+  const [signupRequestId, setSignupRequestId] = React.useState("");
+  const [signupStep, setSignupStep] = React.useState<AuthStep>("form");
+  
+  // Common state
   const [isLoading, setIsLoading] = React.useState(false);
+  const [error, setError] = React.useState<FormError | null>(null);
+  const [canResend, setCanResend] = React.useState(false);
+  const [resendTimer, setResendTimer] = React.useState(0);
 
-  // Reset form when modal opens/closes and update tab when defaultTab changes
+  // Reset form when modal opens/closes
   React.useEffect(() => {
     if (open) {
       setActiveTab(defaultTab);
     } else {
-      // Reset all form data when modal closes
+      // Reset all state
       setLoginPhone("");
       setLoginOTP("");
-      setLoginOtpSent(false);
-      setSignupData({
-        name: "",
-        phone: "",
-        password: "",
-      });
+      setLoginRequestId("");
+      setLoginStep("form");
+      setSignupData({ name: "", phone: "", password: "" });
       setSignupOTP("");
-      setSignupOtpSent(false);
+      setSignupRequestId("");
+      setSignupStep("form");
       setIsLoading(false);
+      setError(null);
+      setCanResend(false);
+      setResendTimer(0);
     }
   }, [open, defaultTab]);
 
-  // Update active tab when defaultTab changes while modal is open
+  // Update tab when defaultTab changes
   React.useEffect(() => {
     if (open) {
       setActiveTab(defaultTab);
     }
   }, [defaultTab, open]);
 
-  const handleSendLoginOTP = async (e: React.FormEvent) => {
+  // Resend timer
+  React.useEffect(() => {
+    if (resendTimer > 0) {
+      const timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
+      return () => clearTimeout(timer);
+    } else if (resendTimer === 0 && (loginStep === "otp" || signupStep === "otp")) {
+      setCanResend(true);
+    }
+  }, [resendTimer, loginStep, signupStep]);
+
+  // Start resend cooldown
+  const startResendTimer = () => {
+    setResendTimer(60);
+    setCanResend(false);
+  };
+
+  // Login: Send OTP
+  const handleLoginSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginPhone) {
-      setIsLoading(true);
-      // Here you would typically send OTP to the phone number
-      console.log("Sending OTP to:", loginPhone);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setLoginOtpSent(true);
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/send-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: loginPhone }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to send OTP");
+      }
+
+      setLoginRequestId(data.requestId);
+      setLoginStep("otp");
+      startResendTimer();
+    } catch (err) {
+      setError({ message: err instanceof Error ? err.message : "Failed to send OTP" });
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleLogin = async (e: React.FormEvent) => {
+  // Login: Verify OTP
+  const handleLoginVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (loginPhone && loginOTP.length === 6) {
-      setIsLoading(true);
-      // Here you would typically verify OTP and login
-      console.log("Logging in with phone:", loginPhone, "OTP:", loginOTP);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId: loginRequestId, otp: loginOTP }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to verify OTP");
+      }
+
+      setLoginStep("success");
+      await refreshSession();
+      
+      // Close modal after brief success message
+      setTimeout(() => {
+        onOpenChange(false);
+      }, 1500);
+    } catch (err) {
+      setError({ message: err instanceof Error ? err.message : "Failed to verify OTP" });
+    } finally {
       setIsLoading(false);
-      onOpenChange(false);
     }
   };
 
-  const handleSendSignupOTP = async (e: React.FormEvent) => {
+  // Signup: Send OTP
+  const handleSignupSendOTP = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (signupData.name && signupData.phone && signupData.password) {
-      setIsLoading(true);
-      // Here you would typically send signup data and OTP
-      console.log("Signing up with:", signupData);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-      setSignupOtpSent(true);
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const requestBody = {
+        name: signupData.name.trim(),
+        phone: signupData.phone.trim(),
+        password: signupData.password,
+      };
+
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(requestBody),
+      });
+
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        throw new Error("Invalid server response");
+      }
+
+      if (!response.ok) {
+        const errorMessage = data?.message || data?.error || `Server error: ${response.status}`;
+        throw new Error(errorMessage);
+      }
+
+      if (!data.requestId) {
+        throw new Error("No request ID received from server");
+      }
+      setSignupRequestId(data.requestId);
+      setSignupStep("otp");
+      startResendTimer();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : "Failed to create account";
+      setError({ message: errorMessage });
+    } finally {
       setIsLoading(false);
     }
   };
 
-  const handleSignup = async (e: React.FormEvent) => {
+  // Signup: Verify OTP
+  const handleSignupVerify = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (signupData.name && signupData.phone && signupData.password && signupOTP.length === 6) {
-      setIsLoading(true);
-      // Here you would typically verify OTP and complete signup
-      console.log("Completing signup with OTP:", signupOTP);
-      // Simulate API call
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/verify-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId: signupRequestId, otp: signupOTP }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to verify OTP");
+      }
+
+      setSignupStep("success");
+      await refreshSession();
+      
+      // Close modal after brief success message
+      setTimeout(() => {
+        onOpenChange(false);
+      }, 1500);
+    } catch (err) {
+      setError({ message: err instanceof Error ? err.message : "Failed to verify OTP" });
+    } finally {
       setIsLoading(false);
-      onOpenChange(false);
+    }
+  };
+
+  // Resend OTP
+  const handleResendOTP = async (requestId: string) => {
+    setError(null);
+    setIsLoading(true);
+
+    try {
+      const response = await fetch("/api/auth/resend-otp", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ requestId }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.message || "Failed to resend OTP");
+      }
+
+      startResendTimer();
+    } catch (err) {
+      setError({ message: err instanceof Error ? err.message : "Failed to resend OTP" });
+    } finally {
+      setIsLoading(false);
     }
   };
 
   const handleSignupChange = (field: string, value: string) => {
     setSignupData((prev) => ({ ...prev, [field]: value }));
   };
+
+  // Success view
+  const renderSuccess = (message: string) => (
+    <div className="flex flex-col items-center justify-center py-8 space-y-4">
+      <div className="rounded-full bg-[#00E785]/20 p-4">
+        <CheckCircle2 className="h-12 w-12 text-[#00E785]" />
+      </div>
+      <h3 className="text-xl font-semibold text-center">{message}</h3>
+      <p className="text-sm text-muted-foreground text-center">
+        Redirecting...
+      </p>
+    </div>
+  );
+
+  // OTP input view
+  const renderOTPInput = (
+    otp: string,
+    setOTP: (value: string) => void,
+    phone: string,
+    onSubmit: (e: React.FormEvent) => void,
+    onBack: () => void,
+    requestId: string
+  ) => (
+    <form onSubmit={onSubmit} className="space-y-6">
+      <div className="text-center space-y-2">
+        <h3 className="text-lg font-semibold">Verify Your Phone</h3>
+        <p className="text-sm text-muted-foreground">
+          We sent a 6-digit code to <span className="font-medium">{phone}</span>
+        </p>
+      </div>
+
+      <div className="flex justify-center">
+        <InputOTP
+          maxLength={6}
+          value={otp}
+          onChange={setOTP}
+          disabled={isLoading}
+        >
+          <InputOTPGroup>
+            <InputOTPSlot index={0} />
+            <InputOTPSlot index={1} />
+            <InputOTPSlot index={2} />
+            <InputOTPSlot index={3} />
+            <InputOTPSlot index={4} />
+            <InputOTPSlot index={5} />
+          </InputOTPGroup>
+        </InputOTP>
+      </div>
+
+      {error && (
+        <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
+          <AlertCircle className="h-4 w-4 shrink-0" />
+          <span>{error.message}</span>
+        </div>
+      )}
+
+      <div className="flex flex-col gap-3">
+        <Button
+          type="submit"
+          disabled={isLoading || otp.length !== 6}
+          className="w-full bg-[#00E785] hover:bg-[#00d675] text-black font-semibold h-11"
+        >
+          {isLoading ? (
+            <>
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              Verifying...
+            </>
+          ) : (
+            "Verify"
+          )}
+        </Button>
+
+        <div className="flex items-center justify-between text-sm">
+          <button
+            type="button"
+            onClick={onBack}
+            className="text-muted-foreground hover:text-foreground"
+            disabled={isLoading}
+          >
+            ← Back
+          </button>
+          
+          {canResend ? (
+            <button
+              type="button"
+              onClick={() => handleResendOTP(requestId)}
+              className="text-[#00E785] hover:text-[#00d675] font-medium"
+              disabled={isLoading}
+            >
+              Resend Code
+            </button>
+          ) : resendTimer > 0 ? (
+            <span className="text-muted-foreground">
+              Resend in {resendTimer}s
+            </span>
+          ) : null}
+        </div>
+      </div>
+    </form>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -132,8 +387,8 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }: AuthModa
             </DialogTitle>
             <DialogDescription className="text-center text-base">
               {activeTab === "login"
-                ? "Sign in to continue to your account"
-                : "Create your account to get started"}
+                ? "Sign in to continue learning"
+                : "Create your account to start learning"}
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -141,7 +396,10 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }: AuthModa
         <div className="p-6 sm:p-8">
           <Tabs
             value={activeTab}
-            onValueChange={(value) => setActiveTab(value as "login" | "signup")}
+            onValueChange={(value) => {
+              setActiveTab(value as "login" | "signup");
+              setError(null);
+            }}
             className="w-full"
           >
             <TabsList className="grid w-full grid-cols-2 mb-6">
@@ -154,109 +412,84 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }: AuthModa
             </TabsList>
 
             {/* Login Tab */}
-            <TabsContent value="login" className="space-y-6 mt-0">
-              <form
-                onSubmit={loginOtpSent ? handleLogin : handleSendLoginOTP}
-                className="space-y-5"
-              >
-                {!loginOtpSent ? (
-                  <>
-                    <div className="space-y-2">
-                      <Label htmlFor="login-phone" className="text-sm font-medium">
-                        Phone Number
-                      </Label>
-                      <Input
-                        id="login-phone"
-                        type="tel"
-                        placeholder="Enter your phone number"
-                        value={loginPhone}
-                        onChange={(e) => setLoginPhone(e.target.value)}
-                        required
-                        className="w-full h-11"
-                        disabled={isLoading}
-                      />
+            <TabsContent value="login" className="mt-0 min-h-[280px]">
+              {loginStep === "success" ? (
+                renderSuccess("Login Successful!")
+              ) : loginStep === "otp" ? (
+                renderOTPInput(
+                  loginOTP,
+                  setLoginOTP,
+                  loginPhone,
+                  handleLoginVerify,
+                  () => {
+                    setLoginStep("form");
+                    setLoginOTP("");
+                    setError(null);
+                  },
+                  loginRequestId
+                )
+              ) : (
+                <form onSubmit={handleLoginSendOTP} className="space-y-5">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-phone" className="text-sm font-medium">
+                      Phone Number
+                    </Label>
+                    <Input
+                      id="login-phone"
+                      type="tel"
+                      placeholder="Enter your phone number"
+                      value={loginPhone}
+                      onChange={(e) => setLoginPhone(e.target.value)}
+                      required
+                      className="w-full h-11"
+                      disabled={isLoading}
+                    />
+                  </div>
+
+                  {error && (
+                    <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      <span>{error.message}</span>
                     </div>
+                  )}
 
-                    <Button
-                      type="submit"
-                      disabled={isLoading || !loginPhone}
-                      className="w-full bg-[#00E785] hover:bg-[#00d675] text-black font-semibold h-11 text-base"
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Sending...
-                        </>
-                      ) : (
-                        "Send OTP"
-                      )}
-                    </Button>
-                  </>
-                ) : (
-                  <>
-                    <div className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="login-otp" className="text-sm font-medium">
-                          Enter Verification Code
-                        </Label>
-                        <div className="flex justify-center">
-                          <InputOTP
-                            maxLength={6}
-                            value={loginOTP}
-                            onChange={(value) => setLoginOTP(value)}
-                            disabled={isLoading}
-                          >
-                            <InputOTPGroup>
-                              <InputOTPSlot index={0} />
-                              <InputOTPSlot index={1} />
-                              <InputOTPSlot index={2} />
-                              <InputOTPSlot index={3} />
-                              <InputOTPSlot index={4} />
-                              <InputOTPSlot index={5} />
-                            </InputOTPGroup>
-                          </InputOTP>
-                        </div>
-                        <p className="text-xs text-muted-foreground text-center mt-2">
-                          We sent a 6-digit code to <span className="font-medium">{loginPhone}</span>
-                        </p>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setLoginOtpSent(false);
-                          setLoginOTP("");
-                        }}
-                        className="text-xs text-[#00E785] hover:text-[#00d675] hover:underline w-full text-center font-medium"
-                        disabled={isLoading}
-                      >
-                        Change phone number
-                      </button>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      disabled={isLoading || loginOTP.length !== 6}
-                      className="w-full bg-[#00E785] hover:bg-[#00d675] text-black font-semibold h-11 text-base"
-                    >
-                      {isLoading ? (
-                        <>
-                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Verifying...
-                        </>
-                      ) : (
-                        "Verify & Login"
-                      )}
-                    </Button>
-                  </>
-                )}
-              </form>
+                  <Button
+                    type="submit"
+                    disabled={isLoading || !loginPhone}
+                    className="w-full bg-[#00E785] hover:bg-[#00d675] text-black font-semibold h-11 text-base"
+                  >
+                    {isLoading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Sending OTP...
+                      </>
+                    ) : (
+                      "Continue"
+                    )}
+                  </Button>
+                </form>
+              )}
             </TabsContent>
 
             {/* Signup Tab */}
-            <TabsContent value="signup" className="space-y-6 mt-0">
-              {!signupOtpSent ? (
-                <form onSubmit={handleSendSignupOTP} className="space-y-5">
+            <TabsContent value="signup" className="mt-0 min-h-[280px]">
+              {signupStep === "success" ? (
+                renderSuccess("Account Created!")
+              ) : signupStep === "otp" ? (
+                renderOTPInput(
+                  signupOTP,
+                  setSignupOTP,
+                  signupData.phone,
+                  handleSignupVerify,
+                  () => {
+                    setSignupStep("form");
+                    setSignupOTP("");
+                    setError(null);
+                  },
+                  signupRequestId
+                )
+              ) : (
+                <form onSubmit={handleSignupSendOTP} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="signup-name" className="text-sm font-medium">
                       Full Name
@@ -305,9 +538,16 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }: AuthModa
                       minLength={6}
                     />
                     <p className="text-xs text-muted-foreground">
-                      Must be at least 6 characters long
+                      At least 6 characters
                     </p>
                   </div>
+
+                  {error && (
+                    <div className="flex items-center gap-2 text-sm text-destructive bg-destructive/10 p-3 rounded-lg">
+                      <AlertCircle className="h-4 w-4 shrink-0" />
+                      <span>{error.message}</span>
+                    </div>
+                  )}
 
                   <Button
                     type="submit"
@@ -327,67 +567,6 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }: AuthModa
                       </>
                     ) : (
                       "Create Account"
-                    )}
-                  </Button>
-                </form>
-              ) : (
-                <form onSubmit={handleSignup} className="space-y-5">
-                  <div className="text-center space-y-2 mb-4">
-                    <h3 className="text-lg font-semibold">Verify Your Phone</h3>
-                    <p className="text-sm text-muted-foreground">
-                      We've sent a verification code to <span className="font-medium">{signupData.phone}</span>
-                    </p>
-                  </div>
-
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="signup-otp" className="text-sm font-medium">
-                        Enter Verification Code
-                      </Label>
-                      <div className="flex justify-center">
-                        <InputOTP
-                          maxLength={6}
-                          value={signupOTP}
-                          onChange={(value) => setSignupOTP(value)}
-                          disabled={isLoading}
-                        >
-                          <InputOTPGroup>
-                            <InputOTPSlot index={0} />
-                            <InputOTPSlot index={1} />
-                            <InputOTPSlot index={2} />
-                            <InputOTPSlot index={3} />
-                            <InputOTPSlot index={4} />
-                            <InputOTPSlot index={5} />
-                          </InputOTPGroup>
-                        </InputOTP>
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSignupOtpSent(false);
-                        setSignupOTP("");
-                      }}
-                      className="text-xs text-[#00E785] hover:text-[#00d675] hover:underline w-full text-center font-medium"
-                      disabled={isLoading}
-                    >
-                      Change phone number
-                    </button>
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={isLoading || signupOTP.length !== 6}
-                    className="w-full bg-[#00E785] hover:bg-[#00d675] text-black font-semibold h-11 text-base"
-                  >
-                    {isLoading ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Verifying...
-                      </>
-                    ) : (
-                      "Verify & Complete Signup"
                     )}
                   </Button>
                 </form>
