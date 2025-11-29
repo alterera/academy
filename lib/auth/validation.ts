@@ -51,9 +51,25 @@ export const resendOTPSchema = z.object({
   requestId: z.string().uuid("Invalid request ID"),
 });
 
+/**
+ * Admin login request validation
+ */
+export const adminLoginSchema = z.object({
+  username: z
+    .string()
+    .min(3, "Username must be at least 3 characters")
+    .max(50, "Username is too long")
+    .trim()
+    .toLowerCase(),
+  password: z
+    .string()
+    .min(1, "Password is required"),
+});
+
 // Export types
 export type SendOTPInput = z.infer<typeof sendOTPSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type VerifyOTPInput = z.infer<typeof verifyOTPSchema>;
 export type ResendOTPInput = z.infer<typeof resendOTPSchema>;
+export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
 

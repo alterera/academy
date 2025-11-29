@@ -14,6 +14,10 @@ export const ErrorCodes = {
   RESEND_TOO_SOON: "RESEND_TOO_SOON",
   USER_EXISTS: "USER_EXISTS",
   SERVER_ERROR: "SERVER_ERROR",
+  // Admin errors
+  ADMIN_NOT_FOUND: "ADMIN_NOT_FOUND",
+  ADMIN_INVALID_CREDENTIALS: "ADMIN_INVALID_CREDENTIALS",
+  ADMIN_INACTIVE: "ADMIN_INACTIVE",
 } as const;
 
 export type ErrorCode = (typeof ErrorCodes)[keyof typeof ErrorCodes];

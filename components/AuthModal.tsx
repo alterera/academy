@@ -158,9 +158,11 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }: AuthModa
       setLoginStep("success");
       await refreshSession();
       
-      // Close modal after brief success message
+      // Close modal after brief success message, then hard refresh and navigate to dashboard
       setTimeout(() => {
         onOpenChange(false);
+        // Hard refresh and navigate to dashboard
+        window.location.href = "/dashboard";
       }, 1500);
     } catch (err) {
       setError({ message: err instanceof Error ? err.message : "Failed to verify OTP" });
@@ -236,9 +238,11 @@ export function AuthModal({ open, onOpenChange, defaultTab = "login" }: AuthModa
       setSignupStep("success");
       await refreshSession();
       
-      // Close modal after brief success message
+      // Close modal after brief success message, then hard refresh and navigate to dashboard
       setTimeout(() => {
         onOpenChange(false);
+        // Hard refresh and navigate to dashboard
+        window.location.href = "/dashboard";
       }, 1500);
     } catch (err) {
       setError({ message: err instanceof Error ? err.message : "Failed to verify OTP" });

@@ -1,8 +1,7 @@
 import type { Metadata } from "next";
 import { Outfit, Nunito_Sans } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/common/Navbar";
-import Footer from "@/components/common/Footer";
+import { ConditionalLayout } from "@/components/common/ConditionalLayout";
 import { AuthProvider } from "@/lib/auth/context";
 
 const outfit = Outfit({
@@ -63,9 +62,7 @@ export default function RootLayout({
         className={`${outfit.variable} ${nunitoSans.variable} font-outfit antialiased`}
       >
         <AuthProvider>
-          <Navbar />
-          {children}
-          <Footer />
+          <ConditionalLayout>{children}</ConditionalLayout>
         </AuthProvider>
       </body>
     </html>

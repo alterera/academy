@@ -13,6 +13,10 @@ export interface SessionData {
   sessionId?: string;
   name?: string;
   isLoggedIn?: boolean;
+  // Admin session fields
+  adminId?: string;
+  username?: string;
+  isAdmin?: boolean;
 }
 
 // Default empty session
