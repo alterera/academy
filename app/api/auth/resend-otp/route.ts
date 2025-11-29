@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
     const validation = resendOTPSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
-        createError(ErrorCodes.INVALID_INPUT, validation.error.errors[0].message),
+        createError(ErrorCodes.INVALID_INPUT, validation.error.issues[0].message),
         { status: 400 }
       );
     }

@@ -112,7 +112,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json(
         createError(
           ErrorCodes.INVALID_INPUT,
-          validation.error.errors[0].message
+          validation.error.issues[0].message
         ),
         { status: 400 }
       );
