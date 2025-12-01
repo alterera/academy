@@ -232,55 +232,12 @@ export default function Navbar() {
             </NavigationMenuItem>
 
             <NavigationMenuItem>
-              <NavigationMenuTrigger>Courses</NavigationMenuTrigger>
-              <NavigationMenuContent>
-                <ul className="grid w-[200px] gap-4">
-                  <li>
-                    <NavigationMenuLink asChild>
-                      <Link href="#" className="flex-row items-center gap-2">
-                        <Braces />
-                        Web Development
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link href="#" className="flex-row items-center gap-2">
-                        <Code />
-                        App Development
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link href="#" className="flex-row items-center gap-2">
-                        <Cloud />
-                        Cloud Engineering
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link href="#" className="flex-row items-center gap-2">
-                        <DatabaseZap />
-                        Data Science & Analytics
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link href="#" className="flex-row items-center gap-2">
-                        <Figma />
-                        UI/UX & Creative Skills
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link href="#" className="flex-row items-center gap-2">
-                        <Gpu />
-                        Digital Marketing
-                      </Link>
-                    </NavigationMenuLink>
-                    <NavigationMenuLink asChild>
-                      <Link href="/courses" className="flex-row items-center gap-2">
-                        <EllipsisVertical />
-                        Explore All Courses
-                      </Link>
-                    </NavigationMenuLink>
-                  </li>
-                </ul>
-              </NavigationMenuContent>
+            <NavigationMenuLink
+                asChild
+                className={navigationMenuTriggerStyle()}
+              >
+                <Link href="/courses">Courses</Link>
+              </NavigationMenuLink>
             </NavigationMenuItem>
             <NavigationMenuItem>
               <NavigationMenuLink
