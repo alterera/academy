@@ -3,22 +3,12 @@
 import * as React from "react";
 import Link from "next/link";
 import {
-  CircleCheckIcon,
-  CircleHelpIcon,
-  CircleIcon,
   Menu,
   X,
   User,
   BookOpen,
   LogOut,
   ChevronDown,
-  Braces,
-  Code,
-  Cloud,
-  DatabaseZap,
-  Figma,
-  Gpu,
-  EllipsisVertical,
 } from "lucide-react";
 
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -240,13 +230,14 @@ export default function Navbar() {
               </NavigationMenuLink>
             </NavigationMenuItem>
             <NavigationMenuItem>
-              <NavigationMenuLink
+            <NavigationMenuLink
                 asChild
                 className={navigationMenuTriggerStyle()}
               >
-                <Link href="/">About</Link>
+                <Link href="/prepare">Prepare</Link>
               </NavigationMenuLink>
             </NavigationMenuItem>
+            
           </NavigationMenuList>
 
           <div className="flex gap-5 ml-10">
@@ -313,11 +304,11 @@ export default function Navbar() {
             </Link>
 
             <Link
-              href="/"
+              href="/prepare"
               onClick={closeMobileMenu}
               className="text-xl font-semibold py-2 border-b"
             >
-              About
+              Prepare
             </Link>
           </nav>
 

@@ -56,7 +56,7 @@ export function CheckoutPayment({
         key: razorpayKey,
         amount: orderData.amount,
         currency: orderData.currency,
-        name: "Training Portal",
+        name: "Alterera Academy",
         description: `Purchase: ${courseTitle}`,
         order_id: orderData.orderId,
         handler: async function (response: any) {
