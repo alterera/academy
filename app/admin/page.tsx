@@ -3,17 +3,12 @@ import { BookOpen, Users, BarChart3, TrendingUp } from "lucide-react";
 import Link from "next/link";
 import connectDB from "@/lib/db";
 import { Course, User } from "@/lib/models";
-import { getSession } from "@/lib/auth/session";
-import { redirect } from "next/navigation";
+import { requireAdmin } from "@/lib/auth/protection";
 
 async function getAdminStats() {
   try {
     await connectDB();
-    const session = await getSession();
-    
-    if (!session.isAdmin) {
-      return null;
-    }
+    // requireAdmin already checks authentication
 
     // Get total courses count
     const totalCourses = await Course.countDocuments();
@@ -51,15 +46,15 @@ async function getAdminStats() {
     });
 
     // Calculate platform fee and GST for each enrollment
-    const PLATFORM_FEE = 99;
-    const GST_RATE = 0.18; // 18%
+    const PLATFORM_FEE = 20;
+    // const GST_RATE = 0.18; // 18%
     
     // For each enrollment, add platform fee and GST
     const revenueWithFees = totalEnrollments * PLATFORM_FEE;
-    const gstOnRevenue = totalRevenue * GST_RATE;
-    const gstOnFees = revenueWithFees * GST_RATE;
+    // const gstOnRevenue = totalRevenue * GST_RATE;
+    // const gstOnFees = revenueWithFees * GST_RATE;
     
-    const totalRevenueWithFees = totalRevenue + revenueWithFees + gstOnRevenue + gstOnFees;
+    const totalRevenueWithFees = totalRevenue + revenueWithFees;
 
     // Format revenue with Indian numbering
     const formatRevenue = (amount: number): string => {
@@ -108,37 +103,44 @@ const recentActivities = [
 ];
 
 export default async function AdminDashboard() {
+  // Check admin authentication - redirects if not authenticated
+  await requireAdmin();
+  
   const stats = await getAdminStats();
 
-  if (!stats) {
-    redirect("/admin/login");
-  }
+  // Provide default values if stats is null
+  const defaultStats = {
+    totalCourses: 0,
+    totalUsers: 0,
+    totalEnrollments: 0,
+    totalRevenue: "₹0",
+  };
 
   const statsData = [
     {
       title: "Total Revenue",
-      value: stats.totalRevenue,
+      value: stats?.totalRevenue || defaultStats.totalRevenue,
       icon: TrendingUp,
       color: "bg-orange-500",
       href: "/admin/enrollments",
     },
     {
       title: "Total Courses",
-      value: stats.totalCourses.toString(),
+      value: (stats?.totalCourses ?? defaultStats.totalCourses).toString(),
       icon: BookOpen,
       color: "bg-blue-500",
       href: "/admin/courses",
     },
     {
       title: "Active Enrollments",
-      value: stats.totalEnrollments.toLocaleString("en-IN"),
+      value: (stats?.totalEnrollments ?? defaultStats.totalEnrollments).toLocaleString("en-IN"),
       icon: BarChart3,
       color: "bg-purple-500",
       href: "/admin/enrollments",
     },
     {
       title: "Total Users",
-      value: stats.totalUsers.toLocaleString("en-IN"),
+      value: (stats?.totalUsers ?? defaultStats.totalUsers).toLocaleString("en-IN"),
       icon: Users,
       color: "bg-green-500",
       href: "/admin/users",

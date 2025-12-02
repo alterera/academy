@@ -14,3 +14,9 @@ export type { IAdmin } from "./admin";
 export { Course } from "./course";
 export type { ICourse, IChapter, ILesson } from "./course";
 
+export { Payment } from "./payment";
+export type { IPayment } from "./payment";
+
+export { Instructor } from "./instructor";
+export type { IInstructor, ISocialLinks } from "./instructor";
+

@@ -35,6 +35,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const refreshSession = useCallback(async () => {
     try {
+      // Skip session check on instructor/admin routes
+      if (typeof window !== "undefined" && (window.location.pathname.startsWith("/instructor") || window.location.pathname.startsWith("/admin"))) {
+        setIsLoading(false);
+        return;
+      }
+      
       const response = await fetch("/api/auth/session");
       if (response.ok) {
         const data = await response.json();

@@ -48,19 +48,19 @@ function calculatePricing(basePrice: string) {
   // Remove ₹ and commas, convert to number
   const numericPrice = parseFloat(basePrice.replace(/[₹,]/g, "").trim()) || 0;
 
-  const PLATFORM_FEE = 99;
-  const GST_RATE = 0.18; // 18%
+  const PLATFORM_FEE = 20;
+  // const GST_RATE = 0.18; // 18%
 
   const baseAmount = numericPrice;
   const platformFee = PLATFORM_FEE;
   const subtotal = baseAmount + platformFee;
-  const gst = Math.round(subtotal * GST_RATE);
-  const total = subtotal + gst;
+  // const gst = Math.round(subtotal * GST_RATE);
+  const total = subtotal;
 
   return {
     baseAmount,
     platformFee,
-    gst,
+    // gst,
     total,
   };
 }
@@ -220,7 +220,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
                         ₹{formatPrice(pricing.platformFee)}
                       </span>
                     </div>
-                    <div className="flex justify-between text-xl items-center">
+                    {/* <div className="flex justify-between text-xl items-center">
                       <div className="flex flex-col">
                         <span>GST @18%</span>
                         <span className="text-xs text-[#6e6e6e]">
@@ -230,7 +230,7 @@ export default async function CheckoutPage({ params }: CheckoutPageProps) {
                       <span className="font-medium">
                         ₹{formatPrice(pricing.gst)}
                       </span>
-                    </div>
+                    </div> */}
                   </div>
 
                   <div className="mt-4 border-t pt-4">

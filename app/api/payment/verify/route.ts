@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import Razorpay from "razorpay";
 import crypto from "crypto";
 import connectDB from "@/lib/db";
-import { User, Course } from "@/lib/models";
+import { User, Course, Payment } from "@/lib/models";
 import { getSession } from "@/lib/auth/session";
 import { ErrorCodes, createError } from "@/lib/auth/errors";
 
@@ -64,17 +64,18 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify payment with Razorpay
+    let razorpayPayment;
     try {
-      const payment = await razorpay.payments.fetch(razorpay_payment_id);
+      razorpayPayment = await razorpay.payments.fetch(razorpay_payment_id);
       
-      if (payment.status !== "captured" && payment.status !== "authorized") {
+      if (razorpayPayment.status !== "captured" && razorpayPayment.status !== "authorized") {
         return NextResponse.json(
           createError(ErrorCodes.INVALID_INPUT, "Payment not successful"),
           { status: 400 }
         );
       }
 
-      if (payment.order_id !== razorpay_order_id) {
+      if (razorpayPayment.order_id !== razorpay_order_id) {
         return NextResponse.json(
           createError(ErrorCodes.INVALID_INPUT, "Order ID mismatch"),
           { status: 400 }
@@ -106,6 +107,32 @@ export async function POST(request: NextRequest) {
         alreadyEnrolled: true,
       });
     }
+
+    // Check if payment already exists (prevent duplicates)
+    const existingPayment = await Payment.findOne({ razorpayPaymentId: razorpay_payment_id });
+    if (existingPayment) {
+      return NextResponse.json({
+        ok: true,
+        message: "Payment already processed",
+        alreadyProcessed: true,
+      });
+    }
+
+    // Store payment details
+    // Convert amount to number (Razorpay returns it as number, but ensure type safety)
+    const amount = typeof razorpayPayment.amount === 'string' 
+      ? parseInt(razorpayPayment.amount, 10) 
+      : razorpayPayment.amount;
+    
+    await Payment.create({
+      userId: user._id,
+      courseId: course._id,
+      razorpayOrderId: razorpay_order_id,
+      razorpayPaymentId: razorpay_payment_id,
+      amount: amount, // Amount in paise (ensured to be number)
+      currency: razorpayPayment.currency || "INR",
+      status: razorpayPayment.status,
+    });
 
     // Enroll user in course
     if (!user.enrolledCourses) {

@@ -4,7 +4,7 @@
  */
 
 import { NextRequest, NextResponse } from "next/server";
-import { getSession } from "@/lib/auth/session";
+import { requireAdminAPI } from "@/lib/auth/protection";
 import { ErrorCodes, createError } from "@/lib/auth/errors";
 import ImageKit from "imagekit";
 
@@ -17,13 +17,8 @@ const imagekit = new ImageKit({
 export async function POST(request: NextRequest) {
   try {
     // Check admin authentication
-    const session = await getSession();
-    if (!session.isAdmin) {
-      return NextResponse.json(
-        createError(ErrorCodes.NOT_AUTHENTICATED, "Unauthorized"),
-        { status: 401 }
-      );
-    }
+    const authCheck = await requireAdminAPI();
+    if (authCheck.response) return authCheck.response;
 
     const formData = await request.formData();
     const file = formData.get("file") as File;

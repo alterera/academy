@@ -7,7 +7,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
 import connectDB from "@/lib/db";
 import { Course } from "@/lib/models";
-import { getSession } from "@/lib/auth/session";
+import { requireAdminAPI } from "@/lib/auth/protection";
 import { ErrorCodes, createError } from "@/lib/auth/errors";
 
 const courseSchema = z.object({
@@ -28,6 +28,7 @@ const courseSchema = z.object({
       lessons: z.array(
         z.object({
           name: z.string().min(1, "Lesson name is required"),
+          videoUrl: z.string().url("Invalid video URL").optional().or(z.literal("")),
         })
       ),
     })
@@ -46,13 +47,9 @@ const courseSchema = z.object({
 export async function GET() {
   try {
     // Check admin authentication
-    const session = await getSession();
-    if (!session.isAdmin) {
-      return NextResponse.json(
-        createError(ErrorCodes.NOT_AUTHENTICATED, "Unauthorized"),
-        { status: 401 }
-      );
-    }
+    const authCheck = await requireAdminAPI();
+    if (authCheck.response) return authCheck.response;
+    const { session } = authCheck;
 
     await connectDB();
     const courses = await Course.find().sort({ createdAt: -1 });
@@ -97,13 +94,9 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     // Check admin authentication
-    const session = await getSession();
-    if (!session.isAdmin) {
-      return NextResponse.json(
-        createError(ErrorCodes.NOT_AUTHENTICATED, "Unauthorized"),
-        { status: 401 }
-      );
-    }
+    const authCheck = await requireAdminAPI();
+    if (authCheck.response) return authCheck.response;
+    const { session } = authCheck;
 
     const body = await request.json();
     const validation = courseSchema.safeParse(body);

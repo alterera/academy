@@ -66,10 +66,25 @@ export const adminLoginSchema = z.object({
     .min(1, "Password is required"),
 });
 
+/**
+ * Instructor login request validation
+ */
+export const instructorLoginSchema = z.object({
+  email: z
+    .string()
+    .email("Invalid email address")
+    .trim()
+    .toLowerCase(),
+  password: z
+    .string()
+    .min(1, "Password is required"),
+});
+
 // Export types
 export type SendOTPInput = z.infer<typeof sendOTPSchema>;
 export type SignupInput = z.infer<typeof signupSchema>;
 export type VerifyOTPInput = z.infer<typeof verifyOTPSchema>;
 export type ResendOTPInput = z.infer<typeof resendOTPSchema>;
 export type AdminLoginInput = z.infer<typeof adminLoginSchema>;
+export type InstructorLoginInput = z.infer<typeof instructorLoginSchema>;
 

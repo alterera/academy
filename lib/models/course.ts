@@ -7,6 +7,7 @@ import mongoose, { Schema, Document, Model } from "mongoose";
 
 export interface ILesson {
   name: string;
+  videoUrl?: string; // Video URL for the lesson
 }
 
 export interface IChapter {
@@ -30,6 +31,7 @@ export interface ICourse extends Document {
   curriculum: IChapter[];
   certificationEnabled: boolean; // Whether certification line is enabled
   isPublished: boolean; // Whether course is published
+  instructorId?: mongoose.Types.ObjectId; // Reference to Instructor (optional for backward compatibility)
   // Price section
   priceTitle: string; // e.g., "Zero subscription, pay-as-you-go plan"
   price: string; // e.g., "₹1,499"
@@ -47,6 +49,10 @@ const LessonSchema = new Schema<ILesson>(
     name: {
       type: String,
       required: true,
+    },
+    videoUrl: {
+      type: String,
+      trim: true,
     },
   },
   { _id: false }
@@ -136,6 +142,11 @@ const CourseSchema = new Schema<ICourse>(
       type: Boolean,
       default: false,
     },
+    instructorId: {
+      type: Schema.Types.ObjectId,
+      ref: "Instructor",
+      index: true,
+    },
     priceTitle: {
       type: String,
       trim: true,
@@ -168,6 +179,7 @@ const CourseSchema = new Schema<ICourse>(
   },
   {
     timestamps: true,
+    strict: true, // Explicitly set strict mode
   }
 );
 

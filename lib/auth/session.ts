@@ -17,6 +17,10 @@ export interface SessionData {
   adminId?: string;
   username?: string;
   isAdmin?: boolean;
+  // Instructor session fields
+  instructorId?: string;
+  instructorEmail?: string;
+  isInstructor?: boolean;
 }
 
 // Default empty session

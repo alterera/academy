@@ -30,6 +30,7 @@ const courseSchema = z.object({
       lessons: z.array(
         z.object({
           name: z.string().min(1, "Lesson name is required"),
+          videoUrl: z.string().url("Invalid video URL").optional().or(z.literal("")),
         })
       ),
     })

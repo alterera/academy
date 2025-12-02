@@ -11,6 +11,7 @@ import Image from "next/image";
 
 interface Lesson {
   name: string;
+  videoUrl?: string;
 }
 
 interface Chapter {
@@ -42,7 +43,7 @@ interface CourseFormData {
   priceFooterText: string;
 }
 
-export default function CourseForm({ courseId }: { courseId?: string }) {
+export default function CourseForm({ courseId, isInstructor = false }: { courseId?: string; isInstructor?: boolean }) {
   const router = useRouter();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [isLoading, setIsLoading] = useState(!!courseId);
@@ -75,11 +76,12 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
     if (courseId) {
       fetchCourse();
     }
-  }, [courseId]);
+  }, [courseId, isInstructor]);
 
   const fetchCourse = async () => {
     try {
-      const response = await fetch(`/api/admin/courses/${courseId}`);
+      const apiPath = isInstructor ? `/api/instructor/courses/${courseId}` : `/api/admin/courses/${courseId}`;
+      const response = await fetch(apiPath);
       const data = await response.json();
       if (data.ok && data.course) {
         setFormData({
@@ -178,7 +180,7 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
       const newCurriculum = [...prev.curriculum];
       newCurriculum[chapterIndex].lessons = [
         ...newCurriculum[chapterIndex].lessons,
-        { name: "" },
+        { name: "", videoUrl: "" },
       ];
       return { ...prev, curriculum: newCurriculum };
     });
@@ -254,7 +256,8 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
       const formData = new FormData();
       formData.append("file", file);
 
-      const response = await fetch("/api/admin/upload", {
+      const uploadPath = isInstructor ? "/api/instructor/upload" : "/api/admin/upload";
+      const response = await fetch(uploadPath, {
         method: "POST",
         body: formData,
       });
@@ -293,9 +296,10 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
     setIsSaving(true);
 
     try {
+      const basePath = isInstructor ? "/api/instructor/courses" : "/api/admin/courses";
       const url = courseId
-        ? `/api/admin/courses/${courseId}`
-        : "/api/admin/courses";
+        ? `${basePath}/${courseId}`
+        : basePath;
       const method = courseId ? "PUT" : "POST";
 
       const response = await fetch(url, {
@@ -307,9 +311,10 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
       const data = await response.json();
 
       if (data.ok) {
-        router.push("/admin/courses");
+        const redirectPath = isInstructor ? "/instructor/courses" : "/admin/courses";
+        router.push(redirectPath);
       } else {
-        alert(data.message || "Failed to save course");
+        alert(data.message || data.error || "Failed to save course");
         setIsSaving(false);
       }
     } catch (error) {
@@ -338,7 +343,7 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
         </h1>
         <Button
           variant="outline"
-          onClick={() => router.push("/admin/courses")}
+          onClick={() => router.push(isInstructor ? "/instructor/courses" : "/admin/courses")}
         >
           Cancel
         </Button>
@@ -642,29 +647,45 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
                   </Button>
                 </div>
                 {chapter.lessons.map((lesson, lessonIndex) => (
-                  <div key={lessonIndex} className="flex gap-2">
+                  <div key={lessonIndex} className="space-y-2 border rounded p-3">
+                    <div className="flex gap-2">
+                      <Input
+                        value={lesson.name}
+                        onChange={(e) =>
+                          handleLessonChange(
+                            chapterIndex,
+                            lessonIndex,
+                            "name",
+                            e.target.value
+                          )
+                        }
+                        placeholder="Lesson name"
+                        required
+                        className="flex-1"
+                      />
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => removeLesson(chapterIndex, lessonIndex)}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <Input
-                      value={lesson.name}
+                      type="url"
+                      value={lesson.videoUrl || ""}
                       onChange={(e) =>
                         handleLessonChange(
                           chapterIndex,
                           lessonIndex,
-                          "name",
+                          "videoUrl",
                           e.target.value
                         )
                       }
-                      placeholder="Lesson name"
-                      required
-                      className="flex-1"
+                      placeholder="Video URL (e.g., https://youtube.com/watch?v=...)"
+                      className="w-full"
                     />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="icon"
-                      onClick={() => removeLesson(chapterIndex, lessonIndex)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
                   </div>
                 ))}
               </div>
@@ -832,7 +853,7 @@ export default function CourseForm({ courseId }: { courseId?: string }) {
           <Button
             type="button"
             variant="outline"
-            onClick={() => router.push("/admin/courses")}
+            onClick={() => router.push(isInstructor ? "/instructor/courses" : "/admin/courses")}
           >
             Cancel
           </Button>

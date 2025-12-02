@@ -6,19 +6,14 @@
 import { NextResponse } from "next/server";
 import connectDB from "@/lib/db";
 import { Course, User } from "@/lib/models";
-import { getSession } from "@/lib/auth/session";
+import { requireAdminAPI } from "@/lib/auth/protection";
 import { ErrorCodes, createError } from "@/lib/auth/errors";
 
 export async function GET() {
   try {
     // Check admin authentication
-    const session = await getSession();
-    if (!session.isAdmin) {
-      return NextResponse.json(
-        createError(ErrorCodes.NOT_AUTHENTICATED, "Unauthorized"),
-        { status: 401 }
-      );
-    }
+    const authCheck = await requireAdminAPI();
+    if (authCheck.response) return authCheck.response;
 
     await connectDB();
 
@@ -59,15 +54,15 @@ export async function GET() {
     });
 
     // Calculate platform fee and GST for each enrollment
-    const PLATFORM_FEE = 399;
-    const GST_RATE = 0.18; // 18%
+    const PLATFORM_FEE = 20;
+    // const GST_RATE = 0.18; // 18%
     
     // For each enrollment, add platform fee and GST
     const revenueWithFees = totalEnrollments * PLATFORM_FEE;
-    const gstOnRevenue = totalRevenue * GST_RATE;
-    const gstOnFees = revenueWithFees * GST_RATE;
+    // const gstOnRevenue = totalRevenue * GST_RATE;
+    // const gstOnFees = revenueWithFees * GST_RATE;
     
-    const totalRevenueWithFees = totalRevenue + revenueWithFees + gstOnRevenue + gstOnFees;
+    const totalRevenueWithFees = totalRevenue + revenueWithFees;
 
     // Format revenue with Indian numbering
     const formatRevenue = (amount: number): string => {

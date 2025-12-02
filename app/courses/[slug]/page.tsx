@@ -5,9 +5,10 @@ import Curriculum from "@/components/Curriculum";
 import Learning from "@/components/Learning";
 import WhyUsGreen from "@/components/WhyUsGreen";
 import connectDB from "@/lib/db";
-import { Course, User } from "@/lib/models";
+import { Course, User, Instructor } from "@/lib/models";
 import { getSession } from "@/lib/auth/session";
 import Image from "next/image";
+import InstructorComponent from "@/components/Instructor";
 
 async function getCourse(slug: string) {
   try {
@@ -15,6 +16,9 @@ async function getCourse(slug: string) {
     const course = await Course.findOne({
       slug: slug,
       isPublished: true,
+    }).populate({
+      path: "instructorId",
+      select: "name about image socialLinks",
     });
 
     if (!course) {
@@ -42,6 +46,14 @@ async function getCourse(slug: string) {
       priceFeatures: course.priceFeatures,
       priceButtonText: course.priceButtonText,
       priceFooterText: course.priceFooterText,
+      instructor: course.instructorId
+        ? {
+            name: (course.instructorId as any).name,
+            about: (course.instructorId as any).about,
+            image: (course.instructorId as any).image,
+            socialLinks: (course.instructorId as any).socialLinks || {},
+          }
+        : null,
     };
   } catch (error) {
     console.error("Failed to fetch course:", error);
@@ -117,6 +129,8 @@ export default async function CoursePage({
         assessments={course.assessments}
         videos={course.videos}
         days={course.days}
+        isEnrolled={isEnrolled}
+        courseSlug={course.slug}
       />
       <Learning learnings={course.learnings} />
       <CourseOverview overviewVideoUrl={course.overviewVideoUrl} />
@@ -124,6 +138,14 @@ export default async function CoursePage({
         curriculum={course.curriculum}
         certificationEnabled={course.certificationEnabled}
       />
+      {course.instructor && (
+        <InstructorComponent
+          name={course.instructor.name}
+          about={course.instructor.about}
+          image={course.instructor.image}
+          socialLinks={course.instructor.socialLinks}
+        />
+      )}
       <WhyUsGreen />
     </div>
   );
